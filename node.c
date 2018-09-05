@@ -21,7 +21,6 @@ int main(int argc, char const *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
     node_info *self = init_self_node_info((char*)argv[2]);
     node_info *target = init_target_node_info((char*)argv[3], (char*)argv[4]);
     printf("%s, %d", self->address, self->port);
