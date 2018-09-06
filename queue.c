@@ -14,13 +14,10 @@ queue *queue_create(void) {
 }
 
 data queue_dequeue(queue* q) {
-    while(q->front == NULL){
-        pthread_mutex_lock(&mutex);
-        pthread_cond_wait(&cond, &mutex);
-        pthread_mutex_unlock(&mutex);
-    }
-
     pthread_mutex_lock(&mutex);
+    while(q->front == NULL){
+        pthread_cond_wait(&cond, &mutex);
+    }
     node* front_node = q->front;
     data data_to_return = front_node->value;
     q->front = front_node->next_in_line;
