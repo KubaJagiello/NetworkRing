@@ -11,14 +11,15 @@ queue *queue_create(void) {
     queue->head->next = queue->head;
     queue->head->prev = queue->head;
     queue->head->value = NULL;
-    queue->freeFunc = NULL;
     pthread_mutex_unlock(&mutex);
     return queue;
 }
 
-queue_position queue_dequeue(queue* queue) {
-    if(queue_is_empty(queue)){
-        return NULL;
+data queue_dequeue(queue* queue) {
+    while(queue_is_empty(queue)){
+        pthread_mutex_lock(&mutex);
+        pthread_cond_wait(&cond, &mutex);
+        pthread_mutex_unlock(&mutex);
     }
     pthread_mutex_lock(&mutex);
     queue_position node_to_return = queue->head->prev;
@@ -26,8 +27,10 @@ queue_position queue_dequeue(queue* queue) {
     node_to_return->prev->next = queue->head;
     node_to_return->next = NULL;
     node_to_return->prev = NULL;
+    data value_to_return = node_to_return->value;
+    free(node_to_return);
     pthread_mutex_unlock(&mutex);
-    return node_to_return;
+    return value_to_return;
 }
 
 int queue_enqueue(queue* queue, data value) {
@@ -39,6 +42,7 @@ int queue_enqueue(queue* queue, data value) {
     new_node->prev = queue->head;
     last_node->prev = new_node;
     queue->head->next = new_node;
+    pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mutex);
     return 0;
 }
@@ -51,22 +55,26 @@ bool queue_is_empty(queue* queue){
 }
 
 int queue_free(queue* queue) {
-    pthread_mutex_lock(&mutex);
+
     while(!queue_is_empty(queue)){
+        pthread_mutex_lock(&mutex);
         queue_position node_to_free = queue->head->next;
         if(queue->freeFunc != NULL){
             queue->freeFunc(node_to_free->value);
         }
         queue->head->next = node_to_free->next;
         free(node_to_free);
+        pthread_mutex_unlock(&mutex);
     }
+    pthread_mutex_lock(&mutex);
+
     free(queue->head);
     free(queue);
     pthread_mutex_unlock(&mutex);
     return 0;
 }
 
-void queue_setMemHandler(queue *queue, memFreeFunc *freeFunc){
+void queue_set_memory_handler(queue* queue, memFreeFunc* freeFunc){
     pthread_mutex_lock(&mutex);
     queue->freeFunc = freeFunc;
     pthread_mutex_unlock(&mutex);

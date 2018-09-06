@@ -5,7 +5,7 @@
 //#define REQUIRED_ARGUMENT_NUMBER 5
 //
 //void free_all(node_info *self, node_info *target);
-//void free_node(node_info *node);
+//void queue_free_node(node_info *node);
 //
 //node_info * init_target_node_info(char *address, char *port);
 //node_info * init_self_node_info(char* port);
@@ -34,8 +34,8 @@
 //}
 //
 //void free_all(node_info *self, node_info *target) {
-//    free_node(self);
-//    free_node(target);
+//    queue_free_node(self);
+//    queue_free_node(target);
 //}
 //
 //node_info * init_target_node_info(char *address, char *port) {
@@ -59,7 +59,7 @@
 //    return create_node_info(selfAddress, selfPort);
 //}
 //
-//void free_node( node_info *node) {
+//void queue_free_node( node_info *node) {
 //    free(node);
 //}
 //

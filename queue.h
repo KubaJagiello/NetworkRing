@@ -31,7 +31,7 @@ typedef struct queue{
 
 queue* queue_create(void);
 
-queue_position queue_dequeue(queue*);
+data queue_dequeue(queue*);
 
 int queue_enqueue(queue*, data);
 
@@ -39,4 +39,6 @@ bool queue_is_empty(queue* queue);
 
 int queue_free(queue*);
 
-void queue_setMemHandler(queue *queue, memFreeFunc *freeFunc);
+void queue_set_memory_handler(queue *queue, memFreeFunc *freeFunc);
+
+void queue_free_node(queue_position position);
