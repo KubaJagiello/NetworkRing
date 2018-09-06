@@ -1,11 +1,10 @@
 
 #ifndef __DATA
-
 #define __DATA
 typedef void* data;
 #endif
-#ifndef __FREEFUNC
 
+#ifndef __FREEFUNC
 #define __FREEFUNC
 typedef void memFreeFunc(data);
 #endif
@@ -13,6 +12,9 @@ typedef void memFreeFunc(data);
 #ifndef __QUEUE_H
 #define __QUEUE_H
 #include <stdbool.h>
+#include <lzma.h>
+#include <stdlib.h>
+#include <pthread.h>
 typedef struct node{
     data value;
     struct node* next;
