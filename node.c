@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "node.h"
 #include "network_helper.h"
+#include "queue.h"
 
 #define REQUIRED_ARGUMENT_NUMBER 5
 
@@ -25,6 +26,12 @@ int main(int argc, char const *argv[]) {
     node_info *target = init_target_node_info((char*)argv[3], (char*)argv[4]);
     printf("%s, %d", self->address, self->port);
 
+
+    queue *queue = queue_create();
+    char* string = "hello, world!";
+    void* pointer = string;
+    queue_enqueue(queue, pointer);
+    queue_free(queue);
     //start(argv[1], self, target);
 
 
