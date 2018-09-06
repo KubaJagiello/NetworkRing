@@ -14,6 +14,7 @@ typedef void memFreeFunc(data);
 #include <stdbool.h>
 #include <lzma.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <pthread.h>
 typedef struct node{
     data value;

@@ -12,8 +12,6 @@
 #include <ctype.h>
 #include "queue.h"
 
-pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
-
 
 #define NUM_THREADS 6
 

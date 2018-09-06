@@ -18,6 +18,7 @@ data queue_dequeue(queue* q) {
     while(q->front == NULL){
         pthread_cond_wait(&cond, &mutex);
     }
+
     node* front_node = q->front;
     data data_to_return = front_node->value;
     q->front = front_node->next_in_line;
@@ -34,6 +35,7 @@ void queue_enqueue(queue* q, data value) {
 
     if(q->back == NULL){
         q->front = q->back = new_node;
+        pthread_cond_signal(&cond);
         pthread_mutex_unlock(&mutex);
         return;
     }
