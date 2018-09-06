@@ -17,14 +17,14 @@ typedef void memFreeFunc(data);
 #include <pthread.h>
 typedef struct node{
     data value;
-    struct node* next;
+    struct node* next_in_line;
 } node;
 
 typedef node* queue_position;
 
 typedef struct queue{
-    node *head;
-    node *tail;
+    node *front;
+    node *back;
     memFreeFunc* freeFunc;
 } queue;
 #endif
@@ -33,11 +33,11 @@ queue* queue_create(void);
 
 data queue_dequeue(queue*);
 
-int queue_enqueue(queue*, data);
+void queue_enqueue(queue*, data);
 
 bool queue_is_empty(queue* queue);
 
-int queue_free(queue*);
+void queue_free(queue*);
 
 void queue_set_memory_handler(queue *queue, memFreeFunc *freeFunc);
 

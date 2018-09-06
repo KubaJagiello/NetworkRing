@@ -1,6 +1,4 @@
 
-
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -17,7 +15,7 @@
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 
 
-#define NUM_THREADS 100
+#define NUM_THREADS 6
 
 void thread_test();
 
@@ -57,9 +55,12 @@ void *init_threads(void *q){
 }
 
 int main(){
+    fprintf(stderr,"Starting single thread test\n");
+    single_thread_test();
+    fprintf(stderr, "Staring multiple thread test\n");
+    thread_test();
+    fprintf(stderr,"Starting free test\n");
     free_test();
-    //thread_test();
-    //single_thread_test();
 }
 
 void free_test() {
@@ -79,20 +80,18 @@ void free_test() {
 void single_thread_test() {
     queue* queue = queue_create();
     queue_set_memory_handler(queue,&my_int_mem_handler);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         int* val = calloc(1, sizeof(val));
         *val = i;
         queue_enqueue(queue, val);
     }
-
+    
     while(!queue_is_empty(queue)){
         int* value = queue_dequeue(queue);
-        printf("value = %d\n", *value);
+        fprintf(stderr,"value = %d\n", *value);
         my_int_mem_handler(value);
     }
-
     queue_free(queue);
-
 }
 
 void thread_test() {
@@ -109,6 +108,7 @@ void thread_test() {
             printf("\n can't create thread: [%s]", strerror(err));
         }
     }
+
     for(int i=0; i < NUM_THREADS; i++){
         pthread_join(tid[i], NULL);
     }
