@@ -18,13 +18,13 @@ typedef void memFreeFunc(data);
 typedef struct node{
     data value;
     struct node* next;
-    struct node* prev;
 } node;
 
 typedef node* queue_position;
 
 typedef struct queue{
-    queue_position head;
+    node *head;
+    node *tail;
     memFreeFunc* freeFunc;
 } queue;
 #endif
