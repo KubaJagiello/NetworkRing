@@ -15,9 +15,9 @@ queue *queue_create(void) {
 
 data queue_dequeue(queue* q) {
     pthread_mutex_lock(&mutex);
-    while(q->front == NULL){
+
+    while(q->front == NULL)
         pthread_cond_wait(&cond, &mutex);
-    }
 
     node* front_node = q->front;
     data data_to_return = front_node->value;
@@ -33,15 +33,13 @@ void queue_enqueue(queue* q, data value) {
     new_node->value = value;
     new_node->next_in_line = NULL;
 
-    if(q->back == NULL){
+    if(q->front == NULL)
         q->front = q->back = new_node;
-        pthread_cond_signal(&cond);
-        pthread_mutex_unlock(&mutex);
-        return;
+    else {
+        q->back->next_in_line = new_node;
+        q->back = new_node;
     }
-
-    q->back->next_in_line = new_node;
-    q->back = new_node;
+    
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mutex);
 }
@@ -55,13 +53,12 @@ bool queue_is_empty(queue* q){
 
 void queue_free(queue* q) {
     pthread_mutex_lock(&mutex);
-    node *tmp = q->front;
-    while(tmp != NULL){
-        node *next_node = tmp->next_in_line;
+    while(q->front != NULL){
+        node *next_node = q->front->next_in_line;
         if(q->freeFunc != NULL)
-            q->freeFunc(tmp->value);
-        free(tmp);
-        tmp = next_node;
+            q->freeFunc(q->front->value);
+        free(q->front);
+        q->front = next_node;
     }
     free(q);
     pthread_mutex_unlock(&mutex);

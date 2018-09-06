@@ -12,13 +12,10 @@
 #include <ctype.h>
 #include "queue.h"
 
-
-#define NUM_THREADS 6
+#define NUM_THREADS 100
 
 void thread_test();
-
 void single_thread_test();
-
 void free_test();
 
 typedef struct test_data{
@@ -26,15 +23,13 @@ typedef struct test_data{
     queue *q;
 } test_data;
 
-
 void my_int_mem_handler(data d){
     free(d);
 }
 
 void my_test_data_mem_handler(data d){
-    free((test_data*) d);
+    free(d);
 }
-
 
 void *init_threads(void *q){
     test_data *d = (test_data*)q;
@@ -48,7 +43,8 @@ void *init_threads(void *q){
         if(new_data != NULL){
             fprintf(stderr,"dequeue %d\n", new_data->id_of_thread);
         }
-        my_test_data_mem_handler(new_data);
+        free(new_data);
+        free(d);
     }
 }
 
