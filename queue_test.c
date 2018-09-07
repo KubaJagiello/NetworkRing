@@ -48,7 +48,7 @@ void *init_threads(void *q){
     }
 }
 
-int main(){
+int main3(){
     fprintf(stderr,"Starting single thread test\n");
     single_thread_test();
     fprintf(stderr, "Staring multiple thread test\n");

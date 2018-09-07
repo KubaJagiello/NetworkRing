@@ -7,6 +7,6 @@ include_directories(.)
 
 add_executable(Ring
         node.c
-        node.h network_helper.c network_helper.h queue.c queue.h queue_test.c exercises/netcat-server-tcp.c exercises/netcat-client-tcp.c)
+        node.h network_helper.c network_helper.h queue.c queue.h queue_test.c exercises/netcat-server-tcp.c exercises/netcat-client-tcp.c exercises/netcat-client-udp.c exercises/netcat-server-udp.c)
 find_package(Threads)
 target_link_libraries(Ring ${CMAKE_THREAD_LIBS_INIT})
