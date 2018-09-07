@@ -32,8 +32,6 @@ int main(int argc, char *argv[]) {
         perror_exit("setsockopt(reuseaddr)");
     }
 
-    fprintf(stderr, "%d %s\n", output_port, output_ip_address);
-
     struct sockaddr_in serv_addr = {0};
     serv_addr.sin_family = AF_INET;
     if (inet_pton(AF_INET, output_ip_address, &serv_addr.sin_addr) <= 0) {
@@ -51,4 +49,5 @@ int main(int argc, char *argv[]) {
     pthread_create(&thread_writer, NULL, &socket_write_to, &client_socket);
     pthread_join(thread_reader, 0);
     pthread_join(thread_writer, 0);
+    pthread_exit(0);
 }
