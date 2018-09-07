@@ -5,14 +5,8 @@
 //#include <sys/types.h>
 //#include <sys/socket.h>
 //#include <netinet/in.h>
-//
-//#define BUFSIZE 2048
-//
-///* Convenience function for error handling */
-//void perror_exit(char msg[]) {
-//    perror(msg);
-//    exit(1);
-//}
+//#include <socket_helper.h>
+//#include <pthread.h>
 //
 //int main(int argc, char *argv[]) {
 //
@@ -50,11 +44,10 @@
 //    /* Since UDP is stateless we're immediately able to receive packets here, no 'listen' required*/
 //
 //
-//    while (1) {
-//        /* Read up to BUFSIZE from the socket and print to stdout. */
-//        char buf[BUFSIZE];
-//        //receive packet, ignore where it is from by passing NULL as src-address fields
-//        int len = recvfrom(server_socket, buf, BUFSIZE, 0, NULL, NULL);
-//        fwrite(buf, sizeof(char), len, stdout);
-//    }
+//    pthread_t thread_reader;
+//    pthread_create(&thread_reader, NULL, &socket_read_from, &server_socket);
+//    pthread_t thread_writer;
+//    pthread_create(&thread_writer, NULL, &socket_write_to, &server_socket);
+//    pthread_join(thread_reader, 0);
+//    pthread_join(thread_writer, 0);
 //}
