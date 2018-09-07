@@ -23,8 +23,8 @@ void *socket_write_to(void *socket);
 int socket_udp_create();
 int socket_tcp_create();
 void socket_make_reusable(int socket);
-void socket_udp_connect(int port, char* ip_address, int socket);
-void socket_tcp_bind(int port, int socket);
+void socket_connect(int port, char *ip_address, int socket);
+void socket_bind(int port, int socket);
 void socket_tcp_listen(int socket);
 int socket_tcp_get_connecting_socket(int socket);
 

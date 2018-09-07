@@ -18,32 +18,11 @@
 //    }
 //
 //    /* Create a socket for IPv4 UDP*/
-//    int server_socket = socket(AF_INET, SOCK_DGRAM, 0);
-//    if (server_socket < 0) {
-//        perror_exit("socket()");
-//    }
-//
-//    /* Optional step, allow address reuse
-//       (needed if you want to use the same port after an unclean shutdown of your program).
-//     */
-//    int reuseaddr = 1;
-//    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr)) == -1) {
-//        perror_exit("setsockopt(reuseaddr)");
-//    }
-//
-//    /* Bind socket to port 'listen_port' */
-//    struct sockaddr_in addr = {0}; //init fields to zero
-//    addr.sin_family = AF_INET; //the address is ipv4
-//    addr.sin_addr.s_addr = INADDR_ANY; //use any address, eg. 0.0.0.0 for ipv4
-//    addr.sin_port = htons(listen_port); //convert the port number to network-byte-order
-//
-//    if (bind(server_socket, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-//        perror_exit("bind()");
-//    }
+//    int server_socket = socket_udp_create();
+//    socket_make_reusable(server_socket);
+//    socket_bind(listen_port, server_socket);
 //
 //    /* Since UDP is stateless we're immediately able to receive packets here, no 'listen' required*/
-//
-//
 //    pthread_t thread_reader;
 //    pthread_create(&thread_reader, NULL, &socket_read_from, &server_socket);
 //    pthread_t thread_writer;

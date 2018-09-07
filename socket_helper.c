@@ -64,7 +64,7 @@ void socket_make_reusable(int socket) {
     }
 }
 
-void socket_udp_connect(int port, char *ip_address, int socket) {
+void socket_connect(int port, char *ip_address, int socket) {
     struct sockaddr_in serv_addr = {0};
     serv_addr.sin_family = AF_INET;
     //make string ip address into network byte order.
@@ -78,7 +78,7 @@ void socket_udp_connect(int port, char *ip_address, int socket) {
     }
 }
 
-void socket_tcp_bind(int port, int socket) {
+void socket_bind(int port, int socket) {
     /* Bind socket to port 'listen_port' */
     struct sockaddr_in addr={0}; //init fields to zero
     addr.sin_family = AF_INET; //the address is ipv4
