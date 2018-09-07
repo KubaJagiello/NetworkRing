@@ -14,29 +14,32 @@ typedef void memFreeFunc(data);
 #include <stdbool.h>
 #include <lzma.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <pthread.h>
 typedef struct node{
     data value;
-    struct node* next;
-    struct node* prev;
+    struct node* next_in_line;
 } node;
 
 typedef node* queue_position;
 
 typedef struct queue{
-    queue_position head;
+    node *front;
+    node *back;
     memFreeFunc* freeFunc;
 } queue;
 #endif
 
 queue* queue_create(void);
 
-queue_position queue_dequeue(queue*);
+data queue_dequeue(queue*);
 
-int queue_enqueue(queue*, data);
+void queue_enqueue(queue*, data);
 
 bool queue_is_empty(queue* queue);
 
-int queue_free(queue*);
+void queue_free(queue*);
 
-void queue_setMemHandler(queue *queue, memFreeFunc *freeFunc);
+void queue_set_memory_handler(queue *queue, memFreeFunc *freeFunc);
+
+void queue_free_node(queue_position position);
