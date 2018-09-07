@@ -11,7 +11,7 @@ void *socket_read_from(void *socket) {
     while(1){
         /* Read up to BUFSIZE from the socket and print to stdout. */
         char buf[BUFSIZE];
-        int len = recvfrom(socket_fd, buf, BUFSIZE, 0, NULL, NULL);
+        ssize_t len = recvfrom(socket_fd, buf, BUFSIZE, 0, NULL, NULL);
         if(len==0){//EOF - socket is closed
             return 0;
         } else if(len<0){//error code

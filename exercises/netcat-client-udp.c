@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "1 Usage: %s <port> <ip>\n", argv[0]);
         return 1;
     }
+
     output_ip_address = argv[2];
     int client_socket = socket_udp_create();
     socket_make_reusable(client_socket);

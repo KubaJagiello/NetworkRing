@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     output_ip_address = argv[2];
-    
+
     int server_socket = socket_tcp_create();
     socket_make_reusable(server_socket);
     socket_connect(output_port, output_ip_address, server_socket);
