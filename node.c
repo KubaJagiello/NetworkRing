@@ -18,54 +18,54 @@ void *socket_ring_receiver(void *sq) ;
 void *socket_ring_sender(void *sq) ;
 
 //{tcpnode,udpnode} local-port next-host next-port
-int main(int argc, char const *argv[]) {
-
-    // lyssna på en port
-    // connecta till en port
-
-    if(argc != REQUIRED_ARGUMENT_NUMBER ){
-        usage_error(argv);
-    }
-
-    const char* tcp = argv[1];
-    node_info *client_info = init_self_node_info((char*)argv[2]);
-    node_info *server_info = init_target_node_info((char*)argv[3], (char*)argv[4]);
-    int server_socket = -1;
-    int client_socket = -1;
-    if(strcmp(tcp, "tcpnode") == 0){
-        server_socket = socket_tcp_create();
-        client_socket = socket_tcp_create();
-    } else if(strcmp(tcp, "udpnode") == 0){
-        server_socket = socket_udp_create();
-        client_socket = socket_udp_create();
-    } else{
-        usage_error(argv);
-    }
-
-    socket_connect(server_info->port, server_info->address, server_socket);
-    socket_bind(client_info->port, client_socket);
-    queue* q = queue_create();
-    socket_and_queue *server_sq = calloc(1, sizeof(socket_and_queue));
-    server_sq->queue = q;
-    server_sq->socket_fd = server_socket;
-
-    socket_and_queue *client_sq = calloc(1, sizeof(socket_and_queue));
-    client_sq->queue = q;
-    client_sq->socket_fd = client_socket;
-
-    pthread_t thread_receiver;
-    pthread_create(&thread_receiver, NULL, &socket_ring_receiver, client_sq);
-    pthread_t thread_sender;
-    pthread_create(&thread_sender, NULL, &socket_ring_sender, server_sq);
-    pthread_join(thread_receiver, 0);
-    pthread_join(thread_sender, 0);
-
-    queue_free(q);
-    free(client_sq);
-    free(server_sq);
-    free_all(client_info, server_info);
-    return 0;
-}
+//int main(int argc, char const *argv[]) {
+//
+//    // lyssna på en port
+//    // connecta till en port
+//
+//    if(argc != REQUIRED_ARGUMENT_NUMBER ){
+//        usage_error(argv);
+//    }
+//
+//    const char* tcp = argv[1];
+//    node_info *client_info = init_self_node_info((char*)argv[2]);
+//    node_info *server_info = init_target_node_info((char*)argv[3], (char*)argv[4]);
+//    int server_socket = -1;
+//    int client_socket = -1;
+//    if(strcmp(tcp, "tcpnode") == 0){
+//        server_socket = socket_tcp_create();
+//        client_socket = socket_tcp_create();
+//    } else if(strcmp(tcp, "udpnode") == 0){
+//        server_socket = socket_udp_create();
+//        client_socket = socket_udp_create();
+//    } else{
+//        usage_error(argv);
+//    }
+//
+//    socket_connect(server_info->port, server_info->address, server_socket);
+//    socket_bind(client_info->port, client_socket);
+//    queue* q = queue_create();
+//    socket_and_queue *server_sq = calloc(1, sizeof(socket_and_queue));
+//    server_sq->queue = q;
+//    server_sq->socket_fd = server_socket;
+//
+//    socket_and_queue *client_sq = calloc(1, sizeof(socket_and_queue));
+//    client_sq->queue = q;
+//    client_sq->socket_fd = client_socket;
+//
+//    pthread_t thread_receiver;
+//    pthread_create(&thread_receiver, NULL, &socket_ring_receiver, client_sq);
+//    pthread_t thread_sender;
+//    pthread_create(&thread_sender, NULL, &socket_ring_sender, server_sq);
+//    pthread_join(thread_receiver, 0);
+//    pthread_join(thread_sender, 0);
+//
+//    queue_free(q);
+//    free(client_sq);
+//    free(server_sq);
+//    free_all(client_info, server_info);
+//    return 0;
+//}
 
 void *socket_ring_receiver(void *sq) {
     socket_and_queue* client_sq = (socket_and_queue*) sq;
