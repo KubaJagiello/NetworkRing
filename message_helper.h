@@ -8,9 +8,9 @@
 #include <stdbool.h>
 
 #define MAX_SIZE 100
-#define ELECTION_START "ELECTION\n"
-#define ELECTION_OVER "ELECTION_OVER\n"
-#define MESSAGE "MESSAGE\n"
+#define ELECTION_START "ELECTION"
+#define ELECTION_OVER "ELECTION_OVER"
+#define MESSAGE "MESSAGE"
 
 
 char* allocate_message();
@@ -23,6 +23,8 @@ char* message_get_id_value(char *message);
 bool message_is_normal(char* message);
 bool message_is_election(char* message);
 bool message_is_election_over(char* message);
+bool substring_is_equal(char* full_string, char* matching_string);
+char* substring(char* start_pointer, char* end_pointer);
 
 
 #endif //RING_MESSAGE_HELPER_H

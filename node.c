@@ -107,8 +107,6 @@ char *parse_message(char *string) {
     //election over message?
     //normal message?
 
-    if()
-
     return NULL;
 }
 
