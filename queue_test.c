@@ -17,17 +17,32 @@
 void thread_test();
 void single_thread_test();
 void free_test();
+void run_tests_for_queue();
+void my_int_mem_handler(data d);
+void my_test_data_mem_handler(data d);
+void *init_threads(void *q);
+
 
 typedef struct test_data{
     int id_of_thread;
     queue *q;
 } test_data;
 
-void my_int_mem_handler(data d){
-    free(d);
+
+void run_tests_for_queue() {
+    fprintf(stderr,"Starting single thread test\n");
+    single_thread_test();
+    fprintf(stderr, "Staring multiple thread test\n");
+    thread_test();
+    fprintf(stderr,"Starting free test\n");
+    free_test();
 }
 
 void my_test_data_mem_handler(data d){
+    free(d);
+}
+
+void my_int_mem_handler(data d) {
     free(d);
 }
 
@@ -46,15 +61,6 @@ void *init_threads(void *q){
         free(new_data);
         free(d);
     }
-}
-
-int main3(){
-    fprintf(stderr,"Starting single thread test\n");
-    single_thread_test();
-    fprintf(stderr, "Staring multiple thread test\n");
-    thread_test();
-    fprintf(stderr,"Starting free test\n");
-    free_test();
 }
 
 void free_test() {
@@ -88,6 +94,7 @@ void single_thread_test() {
     queue_free(queue);
 }
 
+
 void thread_test() {
     pthread_t tid[NUM_THREADS];
     queue *queue = queue_create();
@@ -113,5 +120,8 @@ void thread_test() {
     }
     queue_free(queue);
 }
+
+
+
 
 

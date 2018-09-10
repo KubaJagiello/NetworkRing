@@ -7,8 +7,9 @@ void test_message_normal();
 void test_message_get_id_value();
 void test_message_bools();
 void test_substring();
+void run_tests_for_message_helper();
 
-int main(int argc, char const *argv[]){
+void run_tests_for_message_helper(){
     test_message_election_start();
     test_message_election_over();
     test_message_normal();
