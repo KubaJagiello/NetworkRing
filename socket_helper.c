@@ -23,6 +23,7 @@ void *socket_read_from(void *socket) {
     }
 }
 
+
 void *socket_write_to(void *socket) {
     int socket_fd = *((int*) socket);
     while(1){
@@ -46,6 +47,7 @@ int socket_udp_create() {
     if (socket_fd < 0) {
         perror_exit("socket()");
     }
+    socket_make_reusable(socket_fd);
     return socket_fd;
 }
 
@@ -54,6 +56,7 @@ int socket_tcp_create(){
     if(socket_fd < 0){
         perror_exit("socket()");
     }
+    socket_make_reusable(socket_fd);
     return socket_fd;
 }
 

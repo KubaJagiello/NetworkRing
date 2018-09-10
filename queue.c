@@ -4,7 +4,7 @@
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
-queue *queue_create(void) {
+queue* queue_create(void) {
     pthread_mutex_lock(&mutex);
     queue* q = calloc(1, sizeof(queue));
     q->front = NULL;
