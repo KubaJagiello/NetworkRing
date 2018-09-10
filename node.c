@@ -12,6 +12,11 @@ node_info * init_self_node_info(char* port);
 
 void usage_error(const char *const *argv);
 
+char *parse_message(char *string);
+
+void *socket_ring_receiver(void *sq) ;
+void *socket_ring_sender(void *sq) ;
+
 //{tcpnode,udpnode} local-port next-host next-port
 int main(int argc, char const *argv[]) {
 
@@ -48,36 +53,59 @@ int main(int argc, char const *argv[]) {
     client_sq->queue = q;
     client_sq->socket_fd = client_socket;
 
+    pthread_t thread_receiver;
+    pthread_create(&thread_receiver, NULL, &socket_ring_receiver, client_sq);
+    pthread_t thread_sender;
+    pthread_create(&thread_sender, NULL, &socket_ring_sender, server_sq);
+    pthread_join(thread_receiver, 0);
+    pthread_join(thread_sender, 0);
 
-
-
-
-    printf("%s, %d", client_info->address, client_info->port);
-
-    //start(argv[1], self, server_info);
-
+    queue_free(q);
+    free(client_sq);
+    free(server_sq);
     free_all(client_info, server_info);
-
     return 0;
 }
 
-void *socket_ring_reciever(void *sq) {
+void *socket_ring_receiver(void *sq) {
     socket_and_queue* client_sq = (socket_and_queue*) sq;
     int socket_fd = client_sq->socket_fd;
     queue* q = client_sq->queue;
 
     while(1){
-        /* Read up to BUFSIZE from the socket and print to stdout. */
-        char buf[BUFSIZE];
-        ssize_t len = recvfrom(socket_fd, buf, BUFSIZE, 0, NULL, NULL);
+        char message[BUFSIZE];
+        ssize_t len = recvfrom(socket_fd, message, BUFSIZE, 0, NULL, NULL);
         if(len==0){//EOF - socket is closed
             return 0;
         } else if(len<0){//error code
             perror_exit("read()");
         } else {
-            //add data to queue for parsing.
+            queue_enqueue(q, message);
         }
     }
+}
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+void *socket_ring_sender(void *sq) {
+    socket_and_queue* server_sq = (socket_and_queue*) sq;
+    int socket_fd = server_sq->socket_fd;
+    queue* q = server_sq->queue;
+
+    while(1){
+        //queue is blocking so no worry of endless loop.
+        char* message = parse_message((char*)queue_dequeue(q));
+        if(send(socket_fd, message, BUFSIZE, 0) == -1){
+            perror_exit("write()");
+        }
+    }
+}
+#pragma clang diagnostic pop
+
+char *parse_message(char *string) {
+
+
+    return NULL;
 }
 
 void usage_error(const char *const *argv) {
