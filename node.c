@@ -103,7 +103,11 @@ void *socket_ring_sender(void *sq) {
 #pragma clang diagnostic pop
 
 char *parse_message(char *string) {
+    //election messag?
+    //election over message?
+    //normal message?
 
+    if()
 
     return NULL;
 }

@@ -45,3 +45,15 @@ char *message_normal(char *message) {
 char *message_election_start(char *adress, int port) {
     return create_election_message(ELECTION_START, adress, port);
 }
+
+bool message_is_normal(char *message) {
+    return 0;
+}
+
+bool message_is_election(char *message) {
+    return 0;
+}
+
+bool message_is_election_over(char *message) {
+    return 0;
+}

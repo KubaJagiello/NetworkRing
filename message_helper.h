@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <memory.h>
+#include <stdbool.h>
 
 #define MAX_SIZE 100
 #define ELECTION_START "ELECTION\n"
@@ -19,5 +20,9 @@ char* message_election_start(char *adress, int port);
 char* message_normal(char *message);
 char* message_election_over(char *adress, int port);
 char* message_get_id_value(char *message);
+bool message_is_normal(char* message);
+bool message_is_election(char* message);
+bool message_is_election_over(char* message);
+
 
 #endif //RING_MESSAGE_HELPER_H
