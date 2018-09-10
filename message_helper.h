@@ -14,7 +14,7 @@
 
 
 char* allocate_message();
-char* itoa(int i);
+void int_to_string(int number, char *array_to_fill);
 char* create_message(char* type_of_message, char *additional_info);
 char* message_election_start(char *adress, int port);
 char* message_normal(char *message);
@@ -24,7 +24,7 @@ bool message_is_normal(char* message);
 bool message_is_election(char* message);
 bool message_is_election_over(char* message);
 bool substring_is_equal(char* full_string, char* matching_string);
-char* substring(char* start_pointer, char* end_pointer);
+void substring(char* start_pointer, char* end_pointer, char* array_to_fill);
 
 
 #endif //RING_MESSAGE_HELPER_H

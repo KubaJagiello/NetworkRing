@@ -1,8 +1,5 @@
 #include "message_helper.h"
 
-
-char* substring(char* start_pointer, char* end_pointer);
-
 char *create_message(char *type_of_message, char *additional_info) {
     char* message = allocate_message();
     strncat(message, type_of_message, strlen(type_of_message));
@@ -17,24 +14,23 @@ char *allocate_message() {
 
 char *create_election_message(char *type_of_message, char *adress, int port) {
     char id[100];
-    char* str_port;
-    memset(id, '\0', 100);
+    char string_port[MAX_SIZE];
+    memset(id, '\0', MAX_SIZE);
+    memset(string_port, '\0', MAX_SIZE);
     strncat(id, adress, strlen(adress));
     strncat(id, ",", 1);
-    str_port = itoa(port);
-    strncat(id, str_port, strlen(str_port));
-    free(str_port);
+    int_to_string(port, string_port);
+    strncat(id, string_port, strlen(string_port));
     return create_message(type_of_message, id);
 }
 
-char* itoa(int i){
-    char* string = calloc(MAX_SIZE, sizeof(char));
-    sprintf(string, "%d", i);
-    return string;
+void int_to_string(int number, char *array_to_fill){
+    sprintf(array_to_fill, "%d", number);
 }
 
 char *message_get_id_value(char *message) {
-    return strchr(message, '\n');
+    char* temp = strchr(message, '\n');
+    return ++temp;
 }
 
 char *message_election_over(char *adress, int port) {
@@ -61,24 +57,17 @@ bool message_is_election_over(char *message) {
     return substring_is_equal(message, ELECTION_OVER);
 }
 
-char *substring(char *start_pointer, char *end_pointer) {
-    char *str = allocate_message();
-    int index = 0;
-    while(start_pointer != end_pointer){
-        str[index] = *start_pointer;
-        index++;
-        start_pointer ++;
-    }
-    return str;
+void substring(char *start_pointer, char *end_pointer, char* array_to_fill) {
+    while(start_pointer != end_pointer)
+        *array_to_fill++ = *start_pointer++;
 }
 
 bool substring_is_equal(char *full_string, char *matching_string) {
     char* end_position = strchr(full_string, '\n');
-    if(end_position == NULL){
+    if(end_position == NULL)
         return false;
-    }
-    char* sub_string = substring(full_string, end_position);
-    int result = strcmp(sub_string, matching_string);
-    free(sub_string);
-    return result == 0;
+    char sub_string[MAX_SIZE];
+    memset(sub_string, '\0', MAX_SIZE);
+    substring(full_string, end_position, sub_string);
+    return strcmp(sub_string, matching_string) == 0;
 }

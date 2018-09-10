@@ -3,6 +3,7 @@
 #include "network_helper.h"
 #include "socket_helper.h"
 #include "queue.h"
+#include "message_helper.h"
 
 #define REQUIRED_ARGUMENT_NUMBER 5
 
@@ -11,8 +12,7 @@ node_info * init_target_node_info(char *address, char *port);
 node_info * init_self_node_info(char* port);
 
 void usage_error(const char *const *argv);
-
-char *parse_message(char *string);
+char *parse_message(char *message, queue* q);
 
 void *socket_ring_receiver(void *sq) ;
 void *socket_ring_sender(void *sq) ;
@@ -94,7 +94,7 @@ void *socket_ring_sender(void *sq) {
 
     while(1){
         //queue is blocking so no worry of endless loop.
-        char* message = parse_message((char*)queue_dequeue(q));
+        char* message = parse_message((char*)queue_dequeue(q), q);
         if(send(socket_fd, message, BUFSIZE, 0) == -1){
             perror_exit("write()");
         }
@@ -102,13 +102,6 @@ void *socket_ring_sender(void *sq) {
 }
 #pragma clang diagnostic pop
 
-char *parse_message(char *string) {
-    //election messag?
-    //election over message?
-    //normal message?
-
-    return NULL;
-}
 
 void usage_error(const char *const *argv) {
     fprintf(stderr, "Usage: %s {tcpnode, udpnode} <local-port> <next-host-ip> <next-port>\n", argv[0]);
@@ -139,6 +132,26 @@ node_info * init_self_node_info(char* port) {
         exit(EXIT_FAILURE);
     }
     return create_node_info(selfAddress, selfPort);
+}
+
+char *parse_message(char *message, queue *q) {
+    //election messag?
+    if(message_is_normal(message)){
+        //Add to queue for resending
+        queue_enqueue(q, message);
+    } else if(message_is_election(message)){
+        //Compare with own ID, send biggest id.
+        //if same as self, send election over message.
+    } else if(message_is_election_over(message)){
+        //check if leader ID is same as selfID, if it is send first message.
+        //otherwise mark as non participant, wait for instructions!
+    } else{
+        fprintf(stderr, "Unknown message type.\n");
+    }
+    //election over message?
+    //normal message?
+
+    return NULL;
 }
 
 
