@@ -65,20 +65,20 @@ void socket_make_reusable(int socket) {
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr))==-1) {
         perror_exit("setsockopt(reuseaddr)");
     }
+
 }
 
-void socket_connect(int port, char *ip_address, int socket) {
+int socket_connect(int port, char *ip_address, int socket) {
     struct sockaddr_in serv_addr = {0};
     serv_addr.sin_family = AF_INET;
     //make string ip address into network byte order.
     if (inet_pton(AF_INET, ip_address, &serv_addr.sin_addr) <= 0) {
+        fprintf(stderr, "ip: %s \n", ip_address);
         perror_exit("inet_pton()");
     }
     //convert port integer to network byte order
     serv_addr.sin_port = htons(port);
-    if (connect(socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        perror_exit("connect()");
-    }
+    return connect(socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
 }
 
 void socket_bind(int port, int socket) {
@@ -107,4 +107,10 @@ int socket_tcp_get_connecting_socket(int socket){
         perror_exit("accept()");
     }
     return client_socket;
+}
+
+void socket_single_write_to(int socket, char* message) {
+    if(send(socket, message, BUFSIZE, 0) == -1){
+        perror_exit("write()");
+    }
 }

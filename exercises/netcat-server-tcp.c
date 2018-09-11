@@ -22,11 +22,11 @@
 //    }
 //
 //    /* Create a socket for IPv4 TCP*/
-//    int server_socket = socket_tcp_create();
-//    socket_make_reusable(server_socket);
-//    socket_bind(listen_port, server_socket);
-//    socket_tcp_listen(server_socket);
-//    int client_socket = socket_tcp_get_connecting_socket(server_socket);
+//    int input_socket = socket_tcp_create();
+//    socket_make_reusable(input_socket);
+//    socket_bind(listen_port, input_socket);
+//    socket_tcp_listen(input_socket);
+//    int client_socket = socket_tcp_get_connecting_socket(input_socket);
 //
 //    pthread_t tid_reader;
 //    pthread_t tid_writer;

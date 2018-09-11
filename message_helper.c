@@ -42,7 +42,7 @@ char *message_normal(char *message) {
 }
 
 char *message_election_start(char *adress, int port) {
-    return create_election_message(ELECTION_START, adress, port);
+    return create_election_message(ELECTION, adress, port);
 }
 
 bool message_is_normal(char *message) {
@@ -50,7 +50,7 @@ bool message_is_normal(char *message) {
 }
 
 bool message_is_election(char *message) {
-    return substring_is_equal(message, ELECTION_START);
+    return substring_is_equal(message, ELECTION);
 }
 
 bool message_is_election_over(char *message) {
@@ -70,4 +70,15 @@ bool substring_is_equal(char *full_string, char *matching_string) {
     memset(sub_string, '\0', MAX_SIZE);
     substring(full_string, end_position, sub_string);
     return strcmp(sub_string, matching_string) == 0;
+}
+
+char *message_create_id_from(char *address, int port) {
+    char* id = calloc(MAX_SIZE, sizeof(char));
+    char string_port[MAX_SIZE];;
+    memset(string_port, '\0', MAX_SIZE);
+    strncat(id, address, strlen(address));
+    strncat(id, ",", 1);
+    int_to_string(port, string_port);
+    strncat(id, string_port, strlen(string_port));
+    return id;
 }

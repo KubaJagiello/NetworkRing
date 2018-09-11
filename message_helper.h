@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #define MAX_SIZE 100
-#define ELECTION_START "ELECTION"
+#define ELECTION "ELECTION"
 #define ELECTION_OVER "ELECTION_OVER"
 #define MESSAGE "MESSAGE"
 
@@ -20,6 +20,7 @@ char* message_election_start(char *adress, int port);
 char* message_normal(char *message);
 char* message_election_over(char *adress, int port);
 char* message_get_id_value(char *message);
+char* message_create_id_from(char* address, int port);
 bool message_is_normal(char* message);
 bool message_is_election(char* message);
 bool message_is_election_over(char* message);

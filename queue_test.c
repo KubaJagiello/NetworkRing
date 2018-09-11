@@ -61,6 +61,7 @@ void *init_threads(void *q){
         free(new_data);
         free(d);
     }
+    return 0;
 }
 
 void free_test() {

@@ -1,5 +1,7 @@
 #include <assert.h>
 #include "message_helper.h"
+#include "node.h"
+
 
 void test_message_election_start();
 void test_message_election_over();
@@ -8,14 +10,23 @@ void test_message_get_id_value();
 void test_message_bools();
 void test_substring();
 void run_tests_for_message_helper();
+void test_message_bigger();
+//
+//void main(void){
+//    test_message_election_start();
+//    test_message_election_over();
+//    test_message_normal();
+//    test_message_get_id_value();
+//    test_message_bools();
+//    test_substring();
+//    test_message_bigger();
+//}
 
-void run_tests_for_message_helper(){
-    test_message_election_start();
-    test_message_election_over();
-    test_message_normal();
-    test_message_get_id_value();
-    test_message_bools();
-    test_substring();
+void test_message_bigger() {
+    assert(first_arg_is_bigger("a", "b") == true);
+    assert(first_arg_is_bigger("aa", "ab") == true);
+    assert(first_arg_is_bigger("aaa", "aab") == true);
+    assert(first_arg_is_bigger("b", "a") == false);
 }
 
 void test_message_bools(){

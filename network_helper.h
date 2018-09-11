@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <string.h>
 int getFQDN(char *fqdn, size_t n);
+int hostname_to_ip(const char *hostname, char *ip);
+#endif
 
-#endif //RING_NETWORK_HELPER_H
 
