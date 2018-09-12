@@ -173,7 +173,6 @@ void *socket_ring_writer_udp(void *sq) {
         if(!queue_is_empty(q)){
             message_to_spam = (char*)queue_dequeue(q);
         }
-        fprintf(stderr, "sending:\n%s\n", message_to_spam);
         if(socket_single_write_to(client_socket, message_to_spam) == -1){
             fprintf(stderr, "socket_single_Write() error\n");
             return 0;
