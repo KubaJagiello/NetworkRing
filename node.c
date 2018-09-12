@@ -189,6 +189,7 @@ void *socket_ring_writer_tcp(void *sq) {
     start_election(writer_sq->server_info, client_socket);
 
     while(1){
+        sleep(1);
         char* message = (char*)queue_dequeue(q);
         fprintf(stderr, "Sending:\n%s\n\n", message);
         if(send(client_socket, message, BUFSIZE, 0) == -1){
@@ -239,30 +240,6 @@ node_info * init_self_node_info(char* port) {
     return create_node_info(selfAddress, selfPort);
 }
 
-
-
-/* 1. Skicka election_start.
- *      -address + port pa egen enhet
- *      - connectad enhet
- *
- * 2. Vid election_meddelande:
- *      Jämnför ID'n:
- *      om ID är samma som sig själv:
- *          - skicka election_over
- *      annars:
- *          - skicka vidare högsta ID
- *
- * 3. Vid election_over meddelande:
- *      Om samma id som sig själv:
- *          - skicka ett vanligt meddelande
- *      annars:
- *          - vidarebefodra
- *
- * 4. Vid vanligt meddelande
- *     - vidarebefodra
- *
- */
-
 void parse_message(char *message, queue *q, node_info* info) {
     char* self_id = message_create_id_from(info->address, info->port);
     char* other_id = message_get_id_value(message);
@@ -284,9 +261,7 @@ void parse_message(char *message, queue *q, node_info* info) {
         return;
     }
     fprintf(stderr, "Unknown message type.\n");
-
     fprintf(stderr, "\n\n");
-
 }
 
 void message_normal_logic(char *message, queue *q) {
