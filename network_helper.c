@@ -27,7 +27,7 @@ int hostname_to_ip(const char *hostname, char *ip) {
     struct in_addr **addr_list;
 
     if ((he = gethostbyname(hostname)) == NULL) {
-        // get the host self_info
+        // get the host server_info
         perror_exit("gethostbyname");
     }
 

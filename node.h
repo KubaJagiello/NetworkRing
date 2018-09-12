@@ -8,14 +8,13 @@
 typedef struct node_info{
     char *address;
     int port;
-    bool is_participant;
 } node_info;
 
 typedef struct socket_and_queue{
     struct queue* queue;
     int socket_fd;
-    struct node_info* self_info;
-    struct node_info* target_info;
+    struct node_info* server_info;
+    struct node_info* client_info;
 } socket_and_queue;
 
 node_info *create_node_info(char *address, int port);
@@ -36,5 +35,14 @@ void *socket_ring_writer(void *sq);
 
 bool first_arg_is_bigger(char *self_id, char *other_id);
 
+void start_election(const node_info *server_info, int server_socket);
+
+bool str_is_equal(const char *self_id, const char *other_id);
+
+void message_election_over_logic(char *message, queue *q, char *self_id, char *other_id);
+
+void message_election_logic(queue *q, node_info *info, char *self_id, char *other_id);
+
+void message_normal_logic(char *message, queue *q);
 
 #endif //NODE_H
