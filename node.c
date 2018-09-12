@@ -7,20 +7,6 @@
 
 #define REQUIRED_ARGUMENT_NUMBER 5
 
-void socket_tcp_connect(int writer_socket, const node_info *writer_info);
-
-socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *client_info, int server_socket, queue *q);
-
-void start_threads_for_node(socket_and_queue *server_sq, socket_and_queue *client_sq);
-
-void socket_setup(const char *type_of_node, int *client_socket, int *server_socket);
-
-pthread_t start_sender_thread(socket_and_queue *server_sq);
-
-pthread_t start_reader_thread(socket_and_queue *client_sq);
-
-void start_node(const char **argv);
-
 //{tcpnode,udpnode} local-port next-host next-port
 int main(int argc, char const *argv[]) {
     if(argc != REQUIRED_ARGUMENT_NUMBER){
@@ -252,7 +238,6 @@ void message_election_logic(queue *q, node_info *info, char *self_id, char *othe
 }
 
 void message_election_over_logic(char *message, queue *q, char *self_id, char *other_id) {
-
     if(strcmp(self_id, other_id) == 0){
         queue_enqueue(q, message_normal("hej..............1"));
     } else{
