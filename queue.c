@@ -16,11 +16,9 @@ queue* queue_create(void) {
 data queue_dequeue(queue* q) {
     pthread_mutex_lock(&mutex);
 
-    fprintf(stderr, "before block\n");
     while(q->front == NULL) {
         pthread_cond_wait(&cond, &mutex);
     }
-    fprintf(stderr, "after block\n");
 
     node* front_node = q->front;
     data data_to_return = front_node->value;

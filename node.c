@@ -4,7 +4,8 @@
 #include "socket_helper.h"
 #include "queue.h"
 #include "message_helper.h"
-
+#include <errno.h>
+#include <sys/types.h>
 #define REQUIRED_ARGUMENT_NUMBER 5
 
 
@@ -136,16 +137,11 @@ void *socket_ring_reader_udp(void *sq) {
     int server_socket = reader_sq->socket_fd;
     queue* q = reader_sq->queue;
     node_info* server_info = reader_sq->server_info;
-    //node_info* client_info = reader_sq->client_info;
-
     socket_bind(server_info->port, server_socket);
-    socket_tcp_listen(server_socket);
 
     while(1){
         char message[BUFSIZE];
-        fprintf(stderr, "before recv socket\n");
         ssize_t  len = recv(server_socket, message, BUFSIZE, 0);
-        fprintf(stderr, "after recv\n");
         if(len==0){//EOF - socket is closed
             return 0;
         } else if(len<0){//error code
@@ -160,20 +156,21 @@ void *socket_ring_writer_udp(void *sq) {
     int client_socket = writer_sq->socket_fd;
     queue* q = writer_sq->queue;
     node_info* client_info = writer_sq->client_info;
-
-    socket_bind(client_info->port, client_socket);
+    node_info* server_info = writer_sq->server_info;
+    printf("ADDR: %s, %d\n",client_info->address, client_info->port);
     if(socket_connect(client_info->port, client_info->address, client_socket) != 0){
         perror_exit("socket_connect()");
     }
 
-    char* message_to_spam = message_election_start(writer_sq->server_info->address, writer_sq->server_info->port);
+    char* message_to_spam = message_election_start(server_info->address, server_info->port);
 
     while(1){
         sleep(1);
+        fprintf(stderr, "SENDING : %s\n", message_to_spam);
         if(!queue_is_empty(q)){
             message_to_spam = (char*)queue_dequeue(q);
         }
-        if(socket_single_write_to(client_socket, message_to_spam) == -1){
+        if(socket_single_write_to(client_socket, message_to_spam) == -1 && errno != ECONNREFUSED){
             fprintf(stderr, "socket_single_Write() error\n");
             return 0;
         }

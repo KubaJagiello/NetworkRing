@@ -1,4 +1,5 @@
 #include "message_helper.h"
+#include "network_helper.h"
 
 char *create_message(char *type_of_message, char *additional_info) {
     char* message = allocate_message();
@@ -17,7 +18,9 @@ char *create_election_message(char *type_of_message, char *adress, int port) {
     char string_port[MAX_SIZE];
     memset(id, '\0', MAX_SIZE);
     memset(string_port, '\0', MAX_SIZE);
-    strncat(id, adress, strlen(adress));
+    char x[MAX_SIZE];
+    getFQDN(x, MAX_SIZE);
+    strncat(id, x, strlen(x));
     strncat(id, ",", 1);
     int_to_string(port, string_port);
     strncat(id, string_port, strlen(string_port));
@@ -76,7 +79,9 @@ char *message_create_id_from(char *address, int port) {
     char* id = calloc(MAX_SIZE, sizeof(char));
     char string_port[MAX_SIZE];;
     memset(string_port, '\0', MAX_SIZE);
-    strncat(id, address, strlen(address));
+    char x[MAX_SIZE];
+    getFQDN(x, MAX_SIZE);
+    strncat(id, x, strlen(x));
     strncat(id, ",", 1);
     int_to_string(port, string_port);
     strncat(id, string_port, strlen(string_port));
