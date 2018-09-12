@@ -109,8 +109,14 @@ int socket_tcp_get_connecting_socket(int socket){
     return client_socket;
 }
 
-void socket_single_write_to(int socket, char* message) {
-    if(send(socket, message, BUFSIZE, 0) == -1){
-        perror_exit("write()");
-    }
+int socket_single_write_to(int socket, char* message) {
+    return (int) send(socket, message, BUFSIZE, 0);
+}
+
+
+ssize_t socket_recvfrom(int port, char *ip_address, int socket, char* message) {
+    struct sockaddr_in serv_addr;
+    socklen_t fromlen = sizeof(serv_addr);
+    return recvfrom(socket, message, BUFSIZE, 0, (struct sockaddr *) &serv_addr,
+                    &fromlen);
 }
