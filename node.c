@@ -14,6 +14,8 @@ clock_t clock_difference_in_ms(const struct timer_node *timer_node);
 
 float clock_average_time(const struct timer_node *timer_node);
 
+void timer_lap(struct timer_node *timer_node);
+
 //{tcpnode,udpnode} local-port next-host next-port
 int main(int argc, char const *argv[]) {
     if(argc != REQUIRED_ARGUMENT_NUMBER){
@@ -230,15 +232,7 @@ void parse_message(char message[100], queue *q, struct node_info *info, struct t
     //fprintf(stderr, "\nRECIVING:\n%s\n\n", message);
 
     if(message_is_normal(message)){
-        if(timer_node->is_winner){
-            timer_node->num_laps++;
-            if(timer_node->num_laps % 50000 == 0){
-                timer_node->avg_time = clock_difference_in_ms(timer_node);
-                fprintf(stdout, "Avg clock time is %fs for 50,000 laps\n", clock_average_time(timer_node));
-                timer_node->timer = clock();
-                timer_node->num_laps = 0;
-            }
-        }
+        timer_lap(timer_node);
         message_normal_logic(message, q);
         free(self_id);
         return;
@@ -255,6 +249,18 @@ void parse_message(char message[100], queue *q, struct node_info *info, struct t
     }
     fprintf(stderr, "Unknown message type.\n");
     fprintf(stderr, "\n\n");
+}
+
+void timer_lap(struct timer_node *timer_node) {
+    if(timer_node->is_winner){
+            timer_node->num_laps++;
+            if(timer_node->num_laps % 50000 == 0){
+                timer_node->avg_time = clock_difference_in_ms(timer_node);
+                fprintf(stdout, "Avg clock time is %fs for 50,000 laps\n", clock_average_time(timer_node));
+                timer_node->timer = clock();
+                timer_node->num_laps = 0;
+            }
+        }
 }
 
 float clock_average_time(const struct timer_node *timer_node) { return timer_node->avg_time / timer_node->num_laps; }
