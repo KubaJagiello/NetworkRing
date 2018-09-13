@@ -82,7 +82,6 @@ int socket_connect(int port, char *ip_address, int socket) {
 }
 
 void socket_bind(int port, int socket) {
-    /* Bind socket to port 'listen_port' */
     struct sockaddr_in addr={0}; //init fields to zero
     addr.sin_family = AF_INET; //the address is ipv4
     addr.sin_addr.s_addr = INADDR_ANY; //use any address, eg. 0.0.0.0 for ipv4
@@ -94,9 +93,7 @@ void socket_bind(int port, int socket) {
 }
 
 void socket_tcp_listen(int socket){
-    /* Start listening on the socket, note that the second argument 'backlog' specifies how
-     * many clients can be queued while waiting for the server to accept() */
-    int backlog = 1;//we're only handling a single client in this example
+    int backlog = 1;
     listen(socket, backlog);
 }
 

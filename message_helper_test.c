@@ -39,7 +39,7 @@ void test_message_bools(){
 }
 
 void test_message_get_id_value(){
-    assert(strcmp(message_get_id_value(message_election_start("krenim.cs.umu.se", 1337)), "krenim.cs.umu.se,1337") == 0);
+    assert(strcmp(message_get_id_value(message_election_start(1337)), "krenim.cs.umu.se,1337") == 0);
 }
 
 void test_message_normal() {
@@ -47,11 +47,11 @@ void test_message_normal() {
 }
 
 void test_message_election_over() {
-    assert(strcmp(message_election_over("krenim.cs.umu.se", 1337), "ELECTION_OVER\nkrenim.cs.umu.se,1337") == 0);
+    assert(strcmp(message_election_over(1337), "ELECTION_OVER\nkrenim.cs.umu.se,1337") == 0);
 }
 
 void test_message_election_start() {
-    assert(strcmp(message_election_start("krenim.cs.umu.se", 1337), "ELECTION\nkrenim.cs.umu.se,1337") == 0);
+    assert(strcmp(message_election_start(1337), "ELECTION\nkrenim.cs.umu.se,1337") == 0);
 }
 
 void test_substring(){

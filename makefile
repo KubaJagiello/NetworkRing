@@ -1,6 +1,6 @@
 CC=gcc
-FLAGS= -std=c99 -Wall -Werror -g -D_POSIX_C_SOURCE=200112L
-FILES=node.o queue.o queue_test.o message_helper.o socket_helper.o network_helper.o message_helper_test.o
+FLAGS= -std=c99 -Wall -Werror -g
+FILES=node.o queue.o queue_test.o message_helper.o socket_helper.o network_helper.o message_helper_test.o sighant.o
 
 all: node
 
@@ -26,6 +26,9 @@ queue_test.o: queue_test.c
 	@$(CC) $(FLAGS) -c $*.c
 
 message_helper_test.o: message_helper_test.c
+	@$(CC) $(FLAGS) -c $*.c
+
+sighant.o: sighant.c sighant.h
 	@$(CC) $(FLAGS) -c $*.c
 
 clean:

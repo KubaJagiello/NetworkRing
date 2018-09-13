@@ -17,6 +17,10 @@ typedef struct socket_and_queue{
     struct node_info* client_info;
 } socket_and_queue;
 
+bool sigint;
+
+void node_mem_free_function(data);
+
 node_info* create_node_info(char *address, int port);
 
 void free_all(node_info *self, node_info *target);
@@ -37,7 +41,7 @@ bool first_arg_is_bigger(char *self_id, char *other_id);
 
 void start_election(const node_info *info, int socket);
 
-bool str_is_equal(const char *self_id, const char *other_id);
+bool str_is_equal(const char *str1, const char *str2);
 
 void message_election_over_logic(char *message, queue *q, char *self_id, char *other_id);
 

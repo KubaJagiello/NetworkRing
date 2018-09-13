@@ -1,5 +1,6 @@
 
 #include "queue.h"
+#include "node.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -18,6 +19,9 @@ data queue_dequeue(queue* q) {
 
     while(q->front == NULL) {
         pthread_cond_wait(&cond, &mutex);
+        if(sigint){
+            return 0;
+        }
     }
 
     node* front_node = q->front;
@@ -69,4 +73,8 @@ void queue_set_memory_handler(queue* q, memFreeFunc* freeFunc){
     pthread_mutex_lock(&mutex);
     q->freeFunc = freeFunc;
     pthread_mutex_unlock(&mutex);
+}
+
+void queue_release_threads(void) {
+    pthread_cond_broadcast(&cond);
 }

@@ -13,18 +13,8 @@ char *allocate_message() {
     return calloc(MAX_SIZE, sizeof(char));
 }
 
-char *create_election_message(char *type_of_message, char *adress, int port) {
-    char id[100];
-    char string_port[MAX_SIZE];
-    memset(id, '\0', MAX_SIZE);
-    memset(string_port, '\0', MAX_SIZE);
-    char x[MAX_SIZE];
-    getFQDN(x, MAX_SIZE);
-    strncat(id, x, strlen(x));
-    strncat(id, ",", 1);
-    int_to_string(port, string_port);
-    strncat(id, string_port, strlen(string_port));
-    return create_message(type_of_message, id);
+char *create_election_message(char *type_of_message, int port) {
+    return create_message(type_of_message, get_my_id(port));
 }
 
 void int_to_string(int number, char *array_to_fill){
@@ -36,16 +26,16 @@ char *message_get_id_value(char *message) {
     return ++temp;
 }
 
-char *message_election_over(char *adress, int port) {
-    return create_election_message(ELECTION_OVER, adress, port);
+char *message_election_over(int port) {
+    return create_election_message(ELECTION_OVER, port);
 }
 
 char *message_normal(char *message) {
     return create_message(MESSAGE, message);
 }
 
-char *message_election_start(char *adress, int port) {
-    return create_election_message(ELECTION, adress, port);
+char *message_election_start(int port) {
+    return create_election_message(ELECTION, port);
 }
 
 bool message_is_normal(char *message) {
@@ -75,7 +65,7 @@ bool substring_is_equal(char *full_string, char *matching_string) {
     return strcmp(sub_string, matching_string) == 0;
 }
 
-char *message_create_id_from(char *address, int port) {
+char *get_my_id(int port) {
     char* id = calloc(MAX_SIZE, sizeof(char));
     char string_port[MAX_SIZE];;
     memset(string_port, '\0', MAX_SIZE);

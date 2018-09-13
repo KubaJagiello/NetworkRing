@@ -4,6 +4,7 @@
 #include "socket_helper.h"
 #include "queue.h"
 #include "message_helper.h"
+#include "sighant.h"
 #include <errno.h>
 #include <sys/types.h>
 #define REQUIRED_ARGUMENT_NUMBER 5
@@ -20,7 +21,9 @@ int main(int argc, char const *argv[]) {
     if(argc != REQUIRED_ARGUMENT_NUMBER){
         usage_error(argv);
     }
+    struct sigaction *sig = initSigint();
     start_node(argv);
+    free(sig);
     return 0;
 }
 
@@ -38,13 +41,16 @@ void start_node(const char **argv) {
     socket_setup(type_of_node, &client_socket, &server_socket);
 
     queue* q = queue_create();
+    queue_set_memory_handler(q, &node_mem_free_function);
     socket_and_queue *server_sq = socket_and_queue_create(server_info, client_info, client_socket, q);
     socket_and_queue *client_sq = socket_and_queue_create(server_info, client_info, server_socket, q);
+
     if(strcmp(type_of_node, "tcpnode") == 0){
         start_threads_for_node_tcp(server_sq, client_sq);
     } else{
         start_threads_for_node_udp(server_sq, client_sq);
     }
+
 
     queue_free(q);
     free(client_sq);
@@ -76,6 +82,9 @@ void start_threads_for_node_udp(socket_and_queue *server_sq, socket_and_queue *c
     pthread_create(&thread_reader, NULL, &socket_ring_reader_udp, server_sq);
     pthread_t thread_sender;
     pthread_create(&thread_sender, NULL, &socket_ring_writer_udp, client_sq);
+    if(sigint){
+        queue_release_threads();
+    }
     pthread_join(thread_reader, 0);
     pthread_join(thread_sender, 0);
 }
@@ -102,35 +111,9 @@ socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *cli
 }
 
 void start_election(const node_info *info, int socket) {
-    fprintf(stderr, "\nStarting election:\n%s\n\n", message_election_start(info->address, info->port));
-    socket_single_write_to(socket, message_election_start(info->address, info->port));
+    fprintf(stderr, "\nStarting election:\n%s\n\n", message_election_start(info->port));
+    socket_single_write_to(socket, message_election_start(info->port));
 }
-
-void *socket_ring_reader_tcp(void *sq) {
-    socket_and_queue* reader_sq = (socket_and_queue*) sq;
-    int server_socket = reader_sq->socket_fd;
-    queue* q = reader_sq->queue;
-    node_info* server_info = reader_sq->server_info;
-
-    socket_bind(server_info->port, server_socket);
-    socket_tcp_listen(server_socket);
-    server_socket = socket_tcp_get_connecting_socket(server_socket);
-
-    fprintf(stderr, "\nNode connected to reader\n\n");
-
-    while(1){
-        char message[BUFSIZE];
-        ssize_t len = recv(server_socket, message, BUFSIZE, 0);
-        if(len==0){//EOF - socket is closed
-            return 0;
-        } else if(len<0){//error code
-            perror("recvfrom()");
-        } else {
-            parse_message(message, q, reader_sq->server_info);
-        }
-    }
-}
-
 
 void *socket_ring_reader_udp(void *sq) {
     socket_and_queue* reader_sq = (socket_and_queue*) sq;
@@ -142,12 +125,15 @@ void *socket_ring_reader_udp(void *sq) {
     while(1){
         char message[BUFSIZE];
         ssize_t  len = recv(server_socket, message, BUFSIZE, 0);
-        if(len==0){//EOF - socket is closed
+        if(len==0){
             return 0;
-        } else if(len<0){//error code
+        } else if(len<0){
             perror_exit("recvfrom()");
         } else {
             parse_message(message, q, reader_sq->server_info);
+        }
+        if(sigint){
+            return 0;
         }
     }
 }
@@ -157,26 +143,28 @@ void *socket_ring_writer_udp(void *sq) {
     queue* q = writer_sq->queue;
     node_info* client_info = writer_sq->client_info;
     node_info* server_info = writer_sq->server_info;
-    printf("ADDR: %s, %d\n",client_info->address, client_info->port);
+
     if(socket_connect(client_info->port, client_info->address, client_socket) != 0){
         perror_exit("socket_connect()");
     }
 
-    char* message_to_spam = message_election_start(server_info->address, server_info->port);
+    char* message_to_spam = message_election_start(server_info->port);
 
     while(1){
         sleep(1);
-        fprintf(stderr, "SENDING : %s\n", message_to_spam);
         if(!queue_is_empty(q)){
             message_to_spam = (char*)queue_dequeue(q);
         }
+        fprintf(stderr, "SENDING :\n%s \n", message_to_spam);
         if(socket_single_write_to(client_socket, message_to_spam) == -1 && errno != ECONNREFUSED){
             fprintf(stderr, "socket_single_Write() error\n");
             return 0;
         }
+        if(sigint){
+            return 0;
+        }
     }
 }
-
 
 void *socket_ring_writer_tcp(void *sq) {
     socket_and_queue* writer_sq = (socket_and_queue*) sq;
@@ -185,20 +173,50 @@ void *socket_ring_writer_tcp(void *sq) {
     node_info* client_info = writer_sq->client_info;
 
     socket_tcp_connect(client_socket, client_info);
-    fprintf(stderr, "Writer connected to next node. Starting election..\n\n");
     start_election(writer_sq->server_info, client_socket);
 
     while(1){
         sleep(1);
         char* message = (char*)queue_dequeue(q);
-        fprintf(stderr, "Sending:\n%s\n\n", message);
+        fprintf(stderr, "\nSENDING :\n%s\n\n", message);
         if(send(client_socket, message, BUFSIZE, 0) == -1){
             perror_exit("write()");
             break;
         }
+        if(sigint){
+            return 0;
+        }
     }
     return 0;
 }
+
+void *socket_ring_reader_tcp(void *sq) {
+    socket_and_queue* reader_sq = (socket_and_queue*) sq;
+    int server_socket = reader_sq->socket_fd;
+    queue* q = reader_sq->queue;
+    node_info* server_info = reader_sq->server_info;
+    socket_bind(server_info->port, server_socket);
+
+    socket_tcp_listen(server_socket);
+    int client_socket = socket_tcp_get_connecting_socket(server_socket);
+
+    while(1){
+        sleep(1);
+        char message[BUFSIZE];
+        ssize_t len = recv(client_socket, message, BUFSIZE, MSG_WAITALL);
+        if(len==0){
+            return 0;
+        } else if(len<0){
+            perror("recvfrom()");
+        } else {
+            parse_message(message, q, reader_sq->server_info);
+        }
+        if(sigint){
+            return 0;
+        }
+    }
+}
+
 
 
 void socket_tcp_connect(int writer_socket, const node_info *writer_info) {
@@ -220,7 +238,6 @@ void free_all(node_info *self, node_info *target) {
 
 node_info * init_target_node_info(char *address, char *port) {
     int targetPort;
-
     if((targetPort = atoi(port)) == -1){
         perror("Invalid port argument");
         exit(EXIT_FAILURE);
@@ -241,9 +258,9 @@ node_info * init_self_node_info(char* port) {
 }
 
 void parse_message(char *message, queue *q, node_info* info) {
-    char* self_id = message_create_id_from(info->address, info->port);
+    char* self_id = get_my_id(info->port);
     char* other_id = message_get_id_value(message);
-    fprintf(stderr, "Receiving:\n%s\n\n", message);
+    fprintf(stderr, "\nRECIVING:\n%s\n\n", message);
 
     if(message_is_normal(message)){
         message_normal_logic(message, q);
@@ -270,8 +287,8 @@ void message_normal_logic(char *message, queue *q) {
 
 void message_election_logic(queue *q, node_info *info, char *self_id, char *other_id) {
     if(str_is_equal(self_id, other_id)){
-        fprintf(stderr, "I won the election!\n");
-        queue_enqueue(q, message_election_over(info->address, info->port));
+        fprintf(stderr, "I won the election.\n");
+        queue_enqueue(q, message_election_over(info->port));
     } else if(first_arg_is_bigger(self_id, other_id)){
         queue_enqueue(q, create_message(ELECTION, self_id));
     } else{
@@ -280,15 +297,15 @@ void message_election_logic(queue *q, node_info *info, char *self_id, char *othe
 }
 
 void message_election_over_logic(char *message, queue *q, char *self_id, char *other_id) {
-    if(strcmp(self_id, other_id) == 0){
+    if(str_is_equal(self_id, other_id)){
         queue_enqueue(q, message_normal("hej..............1"));
     } else{
         queue_enqueue(q, message);
     }
 }
 
-bool str_is_equal(const char *self_id, const char *other_id) {
-    return strcmp(self_id, other_id) == 0;
+bool str_is_equal(const char *str1, const char *str2) {
+    return strcmp(str1, str2) == 0;
 }
 
 bool first_arg_is_bigger(char *self_id, char *other_id) {
@@ -300,6 +317,11 @@ node_info *create_node_info(char *address, int port){
     node->port = port;
     node->address = address;
     return node;
+}
+
+void node_mem_free_function(data message) {
+    char* string = (char*) message;
+    free(string);
 }
 
 

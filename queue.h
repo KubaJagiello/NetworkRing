@@ -40,6 +40,8 @@ bool queue_is_empty(queue* queue);
 
 void queue_free(queue*);
 
+void queue_release_threads(void);
+
 void queue_set_memory_handler(queue *queue, memFreeFunc *freeFunc);
 
 void queue_free_node(queue_position position);
