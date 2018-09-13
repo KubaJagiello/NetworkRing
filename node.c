@@ -1,29 +1,21 @@
 #include <stdio.h>
+#include <errno.h>
+#include <asm/errno.h>
 #include "node.h"
 #include "network_helper.h"
 #include "socket_helper.h"
 #include "queue.h"
 #include "message_helper.h"
 #include "sighant.h"
-#include <errno.h>
-#include <sys/types.h>
+
 #define REQUIRED_ARGUMENT_NUMBER 5
-
-
-void *socket_ring_reader_udp(void *sq) ;
-
-void *socket_ring_writer_udp(void *sq) ;
-
-void start_threads_for_node_udp(socket_and_queue *server_sq, socket_and_queue *client_sq) ;
 
 //{tcpnode,udpnode} local-port next-host next-port
 int main(int argc, char const *argv[]) {
     if(argc != REQUIRED_ARGUMENT_NUMBER){
         usage_error(argv);
     }
-    struct sigaction *sig = initSigint();
     start_node(argv);
-    free(sig);
     return 0;
 }
 
@@ -32,6 +24,7 @@ void start_node(const char **argv) {
     hostname_to_ip(argv[3], ip);
     const char* type_of_node = argv[1];
 
+    struct sigaction* sigaction = initSigint();
     node_info *server_info = init_self_node_info((char*)argv[2]);
     node_info *client_info = init_target_node_info(ip, (char*)argv[4]);
 
@@ -46,13 +39,16 @@ void start_node(const char **argv) {
     socket_and_queue *client_sq = socket_and_queue_create(server_info, client_info, server_socket, q);
 
     if(strcmp(type_of_node, "tcpnode") == 0){
-        start_threads_for_node_tcp(server_sq, client_sq);
+        server_sq->is_tcp = true;
+        client_sq->is_tcp = true;
     } else{
-        start_threads_for_node_udp(server_sq, client_sq);
+        server_sq->is_tcp = false;
+        client_sq->is_tcp = false;
     }
-
+    start_threads_for_node(server_sq, client_sq);
 
     queue_free(q);
+    free(sigaction);
     free(client_sq);
     free(server_sq);
     free_all(server_info, client_info);
@@ -70,34 +66,24 @@ void socket_setup(const char *type_of_node, int *client_socket, int *server_sock
     }
 }
 
-void start_threads_for_node_tcp(socket_and_queue *server_sq, socket_and_queue *client_sq) {
+void start_threads_for_node(socket_and_queue *server_sq, socket_and_queue *client_sq) {
     pthread_t thread_reader = start_reader_thread(client_sq);
     pthread_t thread_sender = start_sender_thread(server_sq);
-    pthread_join(thread_reader, 0);
-    pthread_join(thread_sender, 0);
-}
-
-void start_threads_for_node_udp(socket_and_queue *server_sq, socket_and_queue *client_sq) {
-    pthread_t thread_reader;
-    pthread_create(&thread_reader, NULL, &socket_ring_reader_udp, server_sq);
-    pthread_t thread_sender;
-    pthread_create(&thread_sender, NULL, &socket_ring_writer_udp, client_sq);
-    if(sigint){
-        queue_release_threads();
-    }
+    shutdown(client_sq->socket_fd, SHUT_RDWR);
+    shutdown(server_sq->socket_fd, SHUT_RDWR);
     pthread_join(thread_reader, 0);
     pthread_join(thread_sender, 0);
 }
 
 pthread_t start_reader_thread(socket_and_queue *client_sq) {
     pthread_t thread_reader;
-    pthread_create(&thread_reader, NULL, &socket_ring_reader_tcp, client_sq);
+    pthread_create(&thread_reader, NULL, &socket_ring_reader, client_sq);
     return thread_reader;
 }
 
 pthread_t start_sender_thread(socket_and_queue *server_sq) {
     pthread_t thread_sender;
-    pthread_create(&thread_sender, NULL, &socket_ring_writer_tcp, server_sq);
+    pthread_create(&thread_sender, NULL, &socket_ring_writer, server_sq);
     return thread_sender;
 }
 
@@ -115,95 +101,71 @@ void start_election(const node_info *info, int socket) {
     socket_single_write_to(socket, message_election_start(info->port));
 }
 
-void *socket_ring_reader_udp(void *sq) {
-    socket_and_queue* reader_sq = (socket_and_queue*) sq;
-    int server_socket = reader_sq->socket_fd;
-    queue* q = reader_sq->queue;
-    node_info* server_info = reader_sq->server_info;
-    socket_bind(server_info->port, server_socket);
-
-    while(1){
-        char message[BUFSIZE];
-        ssize_t  len = recv(server_socket, message, BUFSIZE, 0);
-        if(len==0){
-            return 0;
-        } else if(len<0){
-            perror_exit("recvfrom()");
-        } else {
-            parse_message(message, q, reader_sq->server_info);
-        }
-        if(sigint){
-            return 0;
-        }
-    }
-}
-void *socket_ring_writer_udp(void *sq) {
+void *socket_ring_writer(void *sq) {
     socket_and_queue* writer_sq = (socket_and_queue*) sq;
     int client_socket = writer_sq->socket_fd;
     queue* q = writer_sq->queue;
     node_info* client_info = writer_sq->client_info;
     node_info* server_info = writer_sq->server_info;
+    bool is_tcp = writer_sq->is_tcp;
 
-    if(socket_connect(client_info->port, client_info->address, client_socket) != 0){
-        perror_exit("socket_connect()");
+    char* message_to_send;
+    if(socket_tcp_connect(client_socket, client_info) == -1){
+        //sigint
+        queue_release_threads();
+        close(client_socket);
+        return 0;
+    }
+    if(is_tcp){
+        start_election(server_info, client_socket);
+    } else{
+        message_to_send = message_election_start(server_info->port);
     }
 
-    char* message_to_spam = message_election_start(server_info->port);
-
     while(1){
-        sleep(1);
-        if(!queue_is_empty(q)){
-            message_to_spam = (char*)queue_dequeue(q);
+        if(!queue_is_empty(q) || is_tcp){
+            message_to_send = (char*)queue_dequeue(q);
         }
-        fprintf(stderr, "SENDING :\n%s \n", message_to_spam);
-        if(socket_single_write_to(client_socket, message_to_spam) == -1 && errno != ECONNREFUSED){
+        if(sigint){
+            queue_release_threads();
+            shutdown(client_socket, );
+            close(client_socket);
+            return 0;
+        }
+        //fprintf(stderr, "\nSENDING :\n%s\n\n", message_to_send);
+        if(socket_single_write_to(client_socket, message_to_send) == -1 && errno != ECONNREFUSED){
             fprintf(stderr, "socket_single_Write() error\n");
             return 0;
         }
-        if(sigint){
-            return 0;
-        }
     }
 }
 
-void *socket_ring_writer_tcp(void *sq) {
-    socket_and_queue* writer_sq = (socket_and_queue*) sq;
-    int client_socket = writer_sq->socket_fd;
-    queue* q = writer_sq->queue;
-    node_info* client_info = writer_sq->client_info;
-
-    socket_tcp_connect(client_socket, client_info);
-    start_election(writer_sq->server_info, client_socket);
-
-    while(1){
-        sleep(1);
-        char* message = (char*)queue_dequeue(q);
-        fprintf(stderr, "\nSENDING :\n%s\n\n", message);
-        if(send(client_socket, message, BUFSIZE, 0) == -1){
-            perror_exit("write()");
-            break;
-        }
-        if(sigint){
-            return 0;
-        }
-    }
-    return 0;
-}
-
-void *socket_ring_reader_tcp(void *sq) {
+void *socket_ring_reader(void *sq) {
     socket_and_queue* reader_sq = (socket_and_queue*) sq;
     int server_socket = reader_sq->socket_fd;
     queue* q = reader_sq->queue;
     node_info* server_info = reader_sq->server_info;
     socket_bind(server_info->port, server_socket);
+    bool is_tcp = reader_sq->is_tcp;
 
-    socket_tcp_listen(server_socket);
-    int client_socket = socket_tcp_get_connecting_socket(server_socket);
-
+    int client_socket = server_socket;
+    if(is_tcp) {
+        socket_tcp_listen(server_socket);
+        client_socket = socket_tcp_get_connecting_socket(server_socket);
+    }
     while(1){
-        sleep(1);
         char message[BUFSIZE];
-        ssize_t len = recv(client_socket, message, BUFSIZE, MSG_WAITALL);
+
+        ssize_t len = recv(client_socket, message, BUFSIZE, 0);
+        fprintf(stderr,"outside recv\n");
+        if(sigint){
+            queue_release_threads();
+            if(is_tcp){
+                close(client_socket);
+            }
+            close(server_socket);
+            return 0;
+        }
         if(len==0){
             return 0;
         } else if(len<0){
@@ -211,19 +173,20 @@ void *socket_ring_reader_tcp(void *sq) {
         } else {
             parse_message(message, q, reader_sq->server_info);
         }
-        if(sigint){
-            return 0;
-        }
     }
 }
 
 
 
-void socket_tcp_connect(int writer_socket, const node_info *writer_info) {
+int socket_tcp_connect(int writer_socket, const node_info *writer_info) {
     while(socket_connect(writer_info->port, writer_info->address, writer_socket) == -1){
+        if(sigint){
+            return -1;
+        }
         fprintf(stderr, "\nCould not connect to ip: %s\nport: %d\n retrying...\n", writer_info->address, writer_info->port);
         sleep(1);
     }
+    return 0;
 }
 
 void usage_error(const char *const *argv) {
@@ -260,7 +223,7 @@ node_info * init_self_node_info(char* port) {
 void parse_message(char *message, queue *q, node_info* info) {
     char* self_id = get_my_id(info->port);
     char* other_id = message_get_id_value(message);
-    fprintf(stderr, "\nRECIVING:\n%s\n\n", message);
+    //fprintf(stderr, "\nRECIVING:\n%s\n\n", message);
 
     if(message_is_normal(message)){
         message_normal_logic(message, q);

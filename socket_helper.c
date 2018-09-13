@@ -65,7 +65,6 @@ void socket_make_reusable(int socket) {
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr))==-1) {
         perror_exit("setsockopt(reuseaddr)");
     }
-
 }
 
 int socket_connect(int port, char *ip_address, int socket) {
@@ -99,7 +98,6 @@ void socket_tcp_listen(int socket){
 
 int socket_tcp_get_connecting_socket(int socket){
     int client_socket = accept(socket, NULL, NULL);
-
     if(client_socket<0){
         perror_exit("accept()");
     }
