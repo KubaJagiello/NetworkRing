@@ -6,9 +6,13 @@
 #include "socket_helper.h"
 #include "queue.h"
 #include "message_helper.h"
-#include "sighant.h"
+//#include "sighant.h"
 
 #define REQUIRED_ARGUMENT_NUMBER 5
+
+clock_t clock_difference_in_ms(const struct timer_node *timer_node);
+
+float clock_average_time(const struct timer_node *timer_node);
 
 //{tcpnode,udpnode} local-port next-host next-port
 int main(int argc, char const *argv[]) {
@@ -24,7 +28,7 @@ void start_node(const char **argv) {
     hostname_to_ip(argv[3], ip);
     const char* type_of_node = argv[1];
 
-    struct sigaction* sigaction = initSigint();
+    //struct sigaction* sigaction = initSigint();
     node_info *server_info = init_self_node_info((char*)argv[2]);
     node_info *client_info = init_target_node_info(ip, (char*)argv[4]);
 
@@ -35,8 +39,9 @@ void start_node(const char **argv) {
 
     queue* q = queue_create();
     queue_set_memory_handler(q, &node_mem_free_function);
-    socket_and_queue *server_sq = socket_and_queue_create(server_info, client_info, client_socket, q);
-    socket_and_queue *client_sq = socket_and_queue_create(server_info, client_info, server_socket, q);
+    socket_and_queue *server_sq = socket_and_queue_create(server_info, client_info, client_socket, q, server_socket);
+    socket_and_queue *client_sq = socket_and_queue_create(server_info, client_info, server_socket, q, client_socket);
+
 
     if(strcmp(type_of_node, "tcpnode") == 0){
         server_sq->is_tcp = true;
@@ -45,10 +50,13 @@ void start_node(const char **argv) {
         server_sq->is_tcp = false;
         client_sq->is_tcp = false;
     }
+    struct timer_node* timer_info = calloc(1, sizeof(struct timer_node));
+    client_sq->timer_info = timer_info;
     start_threads_for_node(server_sq, client_sq);
 
     queue_free(q);
-    free(sigaction);
+    //free(sigaction);
+    free(timer_info);
     free(client_sq);
     free(server_sq);
     free_all(server_info, client_info);
@@ -69,8 +77,6 @@ void socket_setup(const char *type_of_node, int *client_socket, int *server_sock
 void start_threads_for_node(socket_and_queue *server_sq, socket_and_queue *client_sq) {
     pthread_t thread_reader = start_reader_thread(client_sq);
     pthread_t thread_sender = start_sender_thread(server_sq);
-    shutdown(client_sq->socket_fd, SHUT_RDWR);
-    shutdown(server_sq->socket_fd, SHUT_RDWR);
     pthread_join(thread_reader, 0);
     pthread_join(thread_sender, 0);
 }
@@ -87,12 +93,13 @@ pthread_t start_sender_thread(socket_and_queue *server_sq) {
     return thread_sender;
 }
 
-socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *client_info, int server_socket, queue *q) {
+socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *client_info, int server_socket, queue *q, int client_socket) {
     socket_and_queue *client_sq = calloc(1, sizeof(socket_and_queue));
     client_sq->queue = q;
     client_sq->socket_fd = server_socket;
     client_sq->client_info = client_info;
     client_sq->server_info = server_info;
+    client_sq->other_socket = client_socket;
     return client_sq;
 }
 
@@ -123,16 +130,15 @@ void *socket_ring_writer(void *sq) {
     }
 
     while(1){
-        if(!queue_is_empty(q) || is_tcp){
+        if(!queue_is_empty(q) || is_tcp || message_is_normal(message_to_send) || message_is_election_over(message_to_send)){
             message_to_send = (char*)queue_dequeue(q);
         }
         if(sigint){
             queue_release_threads();
-            shutdown(client_socket, );
+            shutdown(writer_sq->other_socket, SHUT_RDWR);
             close(client_socket);
             return 0;
         }
-        //fprintf(stderr, "\nSENDING :\n%s\n\n", message_to_send);
         if(socket_single_write_to(client_socket, message_to_send) == -1 && errno != ECONNREFUSED){
             fprintf(stderr, "socket_single_Write() error\n");
             return 0;
@@ -155,9 +161,7 @@ void *socket_ring_reader(void *sq) {
     }
     while(1){
         char message[BUFSIZE];
-
         ssize_t len = recv(client_socket, message, BUFSIZE, 0);
-        fprintf(stderr,"outside recv\n");
         if(sigint){
             queue_release_threads();
             if(is_tcp){
@@ -171,7 +175,7 @@ void *socket_ring_reader(void *sq) {
         } else if(len<0){
             perror("recvfrom()");
         } else {
-            parse_message(message, q, reader_sq->server_info);
+            parse_message(message, q, reader_sq->server_info, reader_sq->timer_info);
         }
     }
 }
@@ -220,12 +224,21 @@ node_info * init_self_node_info(char* port) {
     return create_node_info(selfAddress, selfPort);
 }
 
-void parse_message(char *message, queue *q, node_info* info) {
+void parse_message(char message[100], queue *q, struct node_info *info, struct timer_node *timer_node) {
     char* self_id = get_my_id(info->port);
     char* other_id = message_get_id_value(message);
     //fprintf(stderr, "\nRECIVING:\n%s\n\n", message);
 
     if(message_is_normal(message)){
+        if(timer_node->is_winner){
+            timer_node->num_laps++;
+            if(timer_node->num_laps % 50000 == 0){
+                timer_node->avg_time = clock_difference_in_ms(timer_node);
+                fprintf(stdout, "Avg clock time is %fs for 50,000 laps\n", clock_average_time(timer_node));
+                timer_node->timer = clock();
+                timer_node->num_laps = 0;
+            }
+        }
         message_normal_logic(message, q);
         free(self_id);
         return;
@@ -236,12 +249,18 @@ void parse_message(char *message, queue *q, node_info* info) {
         return;
     }
     if(message_is_election_over(message)){
-        message_election_over_logic(message, q, self_id, other_id);
+        message_election_over_logic(message, q, self_id, other_id, timer_node);
         free(self_id);
         return;
     }
     fprintf(stderr, "Unknown message type.\n");
     fprintf(stderr, "\n\n");
+}
+
+float clock_average_time(const struct timer_node *timer_node) { return timer_node->avg_time / timer_node->num_laps; }
+
+clock_t clock_difference_in_ms(const struct timer_node *timer_node) {
+    return ((clock() - timer_node->timer) * 1000) / CLOCKS_PER_SEC;
 }
 
 void message_normal_logic(char *message, queue *q) {
@@ -259,9 +278,12 @@ void message_election_logic(queue *q, node_info *info, char *self_id, char *othe
     }
 }
 
-void message_election_over_logic(char *message, queue *q, char *self_id, char *other_id) {
+void message_election_over_logic(char message[100], queue *q, char *self_id, char *other_id, struct timer_node *timer_node) {
     if(str_is_equal(self_id, other_id)){
-        queue_enqueue(q, message_normal("hej..............1"));
+        timer_node->num_laps = 1;
+        timer_node->is_winner = true;
+        timer_node->timer = clock();
+        queue_enqueue(q, message_normal(self_id));
     } else{
         queue_enqueue(q, message);
     }
