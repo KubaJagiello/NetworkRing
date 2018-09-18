@@ -13,10 +13,19 @@ typedef struct node_info{
 typedef struct socket_and_queue{
     struct queue* queue;
     int socket_fd;
+    int other_socket;
     struct node_info* server_info;
     struct node_info* client_info;
     bool is_tcp;
+    struct timer_node* timer_info;
 } socket_and_queue;
+
+typedef struct timer_node{
+    bool is_winner;
+    int num_laps;
+    float avg_time;
+    time_t timer;
+} timer_node;
 
 bool sigint;
 
@@ -32,7 +41,7 @@ node_info* init_self_node_info(char* port);
 
 void usage_error(const char *const *argv);
 
-void parse_message(char *message, queue* q, node_info* info);
+void parse_message(char message[100], queue *q, struct node_info *info, struct timer_node *timer_node);
 
 void *socket_ring_reader(void *sq) ;
 
@@ -44,7 +53,7 @@ void start_election(const node_info *info, int socket);
 
 bool str_is_equal(const char *str1, const char *str2);
 
-void message_election_over_logic(char *message, queue *q, char *self_id, char *other_id);
+void message_election_over_logic(char message[100], queue *q, char *self_id, char *other_id, struct timer_node *timer_node);
 
 void message_election_logic(queue *q, node_info *info, char *self_id, char *other_id);
 
@@ -52,7 +61,7 @@ void message_normal_logic(char *message, queue *q);
 
 int socket_tcp_connect(int writer_socket, const node_info *writer_info);
 
-socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *client_info, int server_socket, queue *q);
+socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *client_info, int server_socket, queue *q, int other_socket);
 
 void start_threads_for_node(socket_and_queue *server_sq, socket_and_queue *client_sq);
 
