@@ -69,8 +69,6 @@ void socket_setup(const char *type_of_node, int *client_socket, int *server_sock
 void start_threads_for_node(socket_and_queue *server_sq, socket_and_queue *client_sq) {
     pthread_t thread_reader = start_reader_thread(client_sq);
     pthread_t thread_sender = start_sender_thread(server_sq);
-    shutdown(client_sq->socket_fd, SHUT_RDWR);
-    shutdown(server_sq->socket_fd, SHUT_RDWR);
     pthread_join(thread_reader, 0);
     pthread_join(thread_sender, 0);
 }
@@ -128,7 +126,6 @@ void *socket_ring_writer(void *sq) {
         }
         if(sigint){
             queue_release_threads();
-            shutdown(client_socket, );
             close(client_socket);
             return 0;
         }
@@ -157,7 +154,6 @@ void *socket_ring_reader(void *sq) {
         char message[BUFSIZE];
 
         ssize_t len = recv(client_socket, message, BUFSIZE, 0);
-        fprintf(stderr,"outside recv\n");
         if(sigint){
             queue_release_threads();
             if(is_tcp){

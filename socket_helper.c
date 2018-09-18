@@ -57,6 +57,7 @@ int socket_tcp_create(){
         perror_exit("socket()");
     }
     socket_make_reusable(socket_fd);
+    socket_make_timeout(socket_fd);
     return socket_fd;
 }
 
@@ -65,6 +66,22 @@ void socket_make_reusable(int socket) {
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr))==-1) {
         perror_exit("setsockopt(reuseaddr)");
     }
+
+}
+
+void socket_make_timeout(int sockfd){
+    struct timeval timeout;
+    timeout.tv_sec = 15;
+    timeout.tv_usec = 0;
+
+    if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                    sizeof(timeout)) < 0)
+        perror_exit("setsockopt failed\n");
+
+    if (setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
+                    sizeof(timeout)) < 0)
+        perror_exit("setsockopt failed\n");
+
 }
 
 int socket_connect(int port, char *ip_address, int socket) {

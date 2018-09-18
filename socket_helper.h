@@ -13,6 +13,8 @@
 #include <netinet/in.h>
 #include "network_helper.h"
 #include <arpa/inet.h>
+#include <sys/un.h>
+#include <netdb.h>
 
 #ifndef BUFSIZE
 #define BUFSIZE 100
@@ -24,6 +26,7 @@ int socket_single_write_to(int socket, char* message);
 int socket_udp_create();
 int socket_tcp_create();
 void socket_make_reusable(int socket);
+void socket_make_timeout(int sockfd);
 int socket_connect(int port, char *ip_address, int socket);
 void socket_bind(int port, int socket);
 void socket_tcp_listen(int socket);
