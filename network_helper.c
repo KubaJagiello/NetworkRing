@@ -2,7 +2,12 @@
 #include "network_helper.h"
 #include "socket_helper.h"
 
-
+/**
+ * Hostname to ip
+ * @param fqdn
+ * @param n
+ * @return
+ */
 int getFQDN(char *fqdn, size_t n) {
     char hostname[256];
     int r = gethostname(hostname, 256);

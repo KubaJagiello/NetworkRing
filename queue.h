@@ -42,6 +42,10 @@ void queue_free(queue*);
 
 void queue_release_threads(void);
 
+void queue_empty(queue* q);
+
+int queue_length(queue* q);
+
 void queue_set_memory_handler(queue *queue, memFreeFunc *freeFunc);
 
 void queue_free_node(queue_position position);

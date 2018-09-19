@@ -13,7 +13,6 @@ typedef struct node_info{
 typedef struct socket_and_queue{
     struct queue* queue;
     int socket_fd;
-    int other_socket;
     struct node_info* server_info;
     struct node_info* client_info;
     bool is_tcp;
@@ -27,6 +26,7 @@ typedef struct timer_node{
     time_t timer;
 } timer_node;
 
+static const int NUM_LAPS_FOR_TIMING = 50000;
 bool sigint;
 
 void node_mem_free_function(data);
@@ -61,16 +61,22 @@ void message_normal_logic(char *message, queue *q);
 
 int socket_tcp_connect(int writer_socket, const node_info *writer_info);
 
-socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *client_info, int server_socket, queue *q, int other_socket);
+socket_and_queue *socket_and_queue_create(node_info *server_info, node_info *client_info, int server_socket, queue *q);
 
 void start_threads_for_node(socket_and_queue *server_sq, socket_and_queue *client_sq);
 
-void socket_setup(const char *type_of_node, int *client_socket, int *server_socket);
+void set_socket_type(const char *type_of_node, int *client_socket, int *server_socket);
 
 pthread_t start_sender_thread(socket_and_queue *server_sq);
 
 pthread_t start_reader_thread(socket_and_queue *client_sq);
 
-void start_node(const char **argv);
+void init_ring(const char **argv);
+
+clock_t clock_difference_in_ms(const struct timer_node *timer_node);
+
+float clock_average_time(const struct timer_node *timer_node);
+
+void timer_lap(struct timer_node *timer_node);
 
 #endif //NODE_H

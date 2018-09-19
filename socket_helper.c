@@ -5,43 +5,6 @@ void perror_exit(char msg[]) {
     exit(1);
 }
 
-void *socket_read_from(void *socket) {
-    int socket_fd = *((int*) socket);
-
-    while(1){
-        /* Read up to BUFSIZE from the socket and print to stdout. */
-        char buf[BUFSIZE];
-        ssize_t len = recvfrom(socket_fd, buf, BUFSIZE, 0, NULL, NULL);
-        if(len==0){//EOF - socket is closed
-            return 0;
-        } else if(len<0){//error code
-            perror_exit("read()");
-        } else {
-            //Print the data that was read from the socket to stdout.
-            fwrite(buf, sizeof(char), len, stdout);
-        }
-    }
-}
-
-
-void *socket_write_to(void *socket) {
-    int socket_fd = *((int*) socket);
-    while(1){
-        char *buf = calloc(BUFSIZE, sizeof(char));
-        ssize_t len = read(STDIN_FILENO, buf, BUFSIZE);
-        //eof
-        if(len==0){
-            return 0;
-        } else if(len < 0){
-            perror_exit("read()");
-        }
-
-        if(send(socket_fd, buf, BUFSIZE, 0) == -1){
-            perror_exit("write()");
-        }
-    }
-}
-
 int socket_udp_create() {
     int socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (socket_fd < 0) {
@@ -57,7 +20,6 @@ int socket_tcp_create(){
         perror_exit("socket()");
     }
     socket_make_reusable(socket_fd);
-    socket_make_timeout(socket_fd);
     return socket_fd;
 }
 
@@ -66,22 +28,6 @@ void socket_make_reusable(int socket) {
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr))==-1) {
         perror_exit("setsockopt(reuseaddr)");
     }
-
-}
-
-void socket_make_timeout(int sockfd){
-    struct timeval timeout;
-    timeout.tv_sec = 15;
-    timeout.tv_usec = 0;
-
-    if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-                    sizeof(timeout)) < 0)
-        perror_exit("setsockopt failed\n");
-
-    if (setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
-                    sizeof(timeout)) < 0)
-        perror_exit("setsockopt failed\n");
-
 }
 
 int socket_connect(int port, char *ip_address, int socket) {
@@ -123,12 +69,4 @@ int socket_tcp_get_connecting_socket(int socket){
 
 int socket_single_write_to(int socket, char* message) {
     return (int) send(socket, message, BUFSIZE, 0);
-}
-
-
-ssize_t socket_recvfrom(int port, char *ip_address, int socket, char* message) {
-    struct sockaddr_in serv_addr;
-    socklen_t fromlen = sizeof(serv_addr);
-    return recvfrom(socket, message, BUFSIZE, 0, (struct sockaddr *) &serv_addr,
-                    &fromlen);
 }

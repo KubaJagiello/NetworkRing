@@ -14,6 +14,18 @@ queue* queue_create(void) {
     return q;
 }
 
+int queue_length(queue* q){
+    pthread_mutex_lock(&mutex);
+    int length = 0;
+    queue_position curr_point = q->front;
+    while(curr_point != NULL){
+        curr_point = curr_point->next_in_line;
+        length++;
+    }
+    pthread_mutex_unlock(&mutex);
+    return length;
+}
+
 data queue_dequeue(queue* q) {
     pthread_mutex_lock(&mutex);
 
@@ -30,6 +42,17 @@ data queue_dequeue(queue* q) {
     free(front_node);
     pthread_mutex_unlock(&mutex);
     return data_to_return;
+}
+
+void queue_empty(queue* q){
+    pthread_mutex_lock(&mutex);
+    while(q->front != NULL){
+        node* front_node = q->front;
+       // data data_to_return = front_node->value;
+        q->front = front_node->next_in_line;
+        free(front_node);
+    }
+    pthread_mutex_unlock(&mutex);
 }
 
 void queue_enqueue(queue* q, data value) {
